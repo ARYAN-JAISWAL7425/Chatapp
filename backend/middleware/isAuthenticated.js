@@ -13,11 +13,7 @@ const isAuthenticated = async(req,res,next) => {
     next();
   } catch (error) {
     console.log(error);
+    return res.status(401).json({ message: "Invalid token" });
   }
 };
 export default isAuthenticated;
-
-const req = {
-    id:"",
-}
-req.id = "sdlbgnjdfn"

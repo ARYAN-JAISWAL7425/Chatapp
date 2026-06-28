@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 
 export const register = async (req, res) => {
     try {
-        const { fullName, username, password, confirmPassword, gender } = req.body;
+        const { fullName, username, password, confirmPassword, gender, profilePhoto } = req.body;
         if (!fullName || !username || !password || !confirmPassword || !gender) {
             return res.status(400).json({ message: "All fields are required" });
         }
@@ -19,14 +19,16 @@ export const register = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // profilePhoto
-        const maleProfilePhoto = `https://avatar.iran.liara.run/public/boy?username=${username}`;
-        const femaleProfilePhoto = `https://avatar.iran.liara.run/public/girl?username=${username}`;
+        const maleProfilePhoto = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=0D8ABC&color=fff&rounded=true`;
+        const femaleProfilePhoto = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=E91E8C&color=fff&rounded=true`;
+
+        const defaultPhoto = gender === "male" ? maleProfilePhoto : femaleProfilePhoto;
 
         await User.create({
             fullName,
             username,
             password: hashedPassword,
-            profilePhoto: gender === "male" ? maleProfilePhoto : femaleProfilePhoto,
+            profilePhoto: profilePhoto || defaultPhoto,
             gender
         });
         return res.status(201).json({
@@ -35,6 +37,7 @@ export const register = async (req, res) => {
         })
     } catch (error) {
         console.log(error);
+        return res.status(500).json({ message: "Internal server error" });
     }
 };
 export const login = async (req, res) => {
@@ -63,7 +66,17 @@ export const login = async (req, res) => {
 
         const token = await jwt.sign(tokenData, process.env.JWT_SECRET_KEY, { expiresIn: '1d' });
 
-        return res.status(200).cookie("token", token, { maxAge: 1 * 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'strict' }).json({
+        // In production the frontend and backend are on different domains, so the
+        // cookie must be SameSite=None and Secure for the browser to send it.
+        const isProduction = process.env.NODE_ENV === "production";
+        const cookieOptions = {
+            maxAge: 1 * 24 * 60 * 60 * 1000,
+            httpOnly: true,
+            sameSite: isProduction ? 'none' : 'strict',
+            secure: isProduction,
+        };
+
+        return res.status(200).cookie("token", token, cookieOptions).json({
             _id: user._id,
             username: user.username,
             fullName: user.fullName,
@@ -72,15 +85,23 @@ export const login = async (req, res) => {
 
     } catch (error) {
         console.log(error);
+        return res.status(500).json({ message: "Internal server error" });
     }
 }
 export const logout = (req, res) => {
     try {
-        return res.status(200).cookie("token", "", { maxAge: 0 }).json({
+        const isProduction = process.env.NODE_ENV === "production";
+        return res.status(200).cookie("token", "", {
+            maxAge: 0,
+            httpOnly: true,
+            sameSite: isProduction ? 'none' : 'strict',
+            secure: isProduction,
+        }).json({
             message: "logged out successfully."
         })
     } catch (error) {
         console.log(error);
+        return res.status(500).json({ message: "Internal server error" });
     }
 }
 export const getOtherUsers = async (req, res) => {
@@ -90,5 +111,6 @@ export const getOtherUsers = async (req, res) => {
         return res.status(200).json(otherUsers);
     } catch (error) {
         console.log(error);
+        return res.status(500).json({ message: "Internal server error" });
     }
 }

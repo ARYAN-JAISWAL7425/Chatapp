@@ -12,10 +12,30 @@ const Signup = () => {
     password: "",
     confirmPassword: "",
     gender: "",
+    profilePhoto: "",
   });
+  const [preview, setPreview] = useState("");
   const navigate = useNavigate();
   const handleCheckbox = (gender) => {
     setUser({ ...user, gender });
+  }
+  const handlePhoto = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image must be smaller than 2MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setUser((prev) => ({ ...prev, profilePhoto: reader.result }));
+      setPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
   }
   const onSubmitHandler = async (e) => {
     e.preventDefault();
@@ -31,7 +51,7 @@ const Signup = () => {
         toast.success(res.data.message);
       }
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error.response?.data?.message || "Something went wrong");
       console.log(error);
     }
     setUser({
@@ -40,7 +60,9 @@ const Signup = () => {
       password: "",
       confirmPassword: "",
       gender: "",
+      profilePhoto: "",
     })
+    setPreview("");
   }
   return (
     <div className="min-w-96 mx-auto">
@@ -91,6 +113,23 @@ const Signup = () => {
               type="password"
               placeholder='Confirm Password' />
           </div>
+          <div>
+            <label className='label p-2'>
+              <span className='text-base label-text'>Profile Picture</span>
+            </label>
+            <div className='flex items-center gap-3'>
+              <div className='avatar'>
+                <div className='w-12 h-12 rounded-full bg-zinc-700 overflow-hidden'>
+                  <img src={preview || "/default-avatar.svg"} alt="preview" className='w-full h-full object-cover' />
+                </div>
+              </div>
+              <input
+                onChange={handlePhoto}
+                className='file-input file-input-bordered file-input-sm w-full'
+                type="file"
+                accept="image/*" />
+            </div>
+          </div>
           <div className='flex items-center my-4'>
             <div className='flex items-center'>
               <p>Male</p>
@@ -98,7 +137,6 @@ const Signup = () => {
                 type="checkbox"
                 checked={user.gender === "male"}
                 onChange={() => handleCheckbox("male")}
-                defaultChecked
                 className="checkbox mx-2" />
             </div>
             <div className='flex items-center'>
@@ -107,13 +145,12 @@ const Signup = () => {
                 type="checkbox"
                 checked={user.gender === "female"}
                 onChange={() => handleCheckbox("female")}
-                defaultChecked
                 className="checkbox mx-2" />
             </div>
           </div>
           <p className='text-center my-2'>Already have an account? <Link to="/login"> login </Link></p>
           <div>
-            <button type='submit' className='btn btn-block btn-sm mt-2 border border-slate-700'>Singup</button>
+            <button type='submit' className='btn btn-block btn-sm mt-2 border border-slate-700'>Signup</button>
           </div>
         </form>
       </div>

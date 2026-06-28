@@ -1,13 +1,22 @@
 import {Server} from "socket.io";
 import http from "http";
 import express from "express";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
+
+// Allowed frontend origins. Set CLIENT_URL in .env (comma-separated for multiple).
+export const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:3000,http://localhost:3001')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 
 const server = http.createServer(app);
 const io = new Server(server, {
     cors:{
-        origin:['http://localhost:3000'],
+        origin: allowedOrigins,
         methods:['GET', 'POST'],
     },
 });

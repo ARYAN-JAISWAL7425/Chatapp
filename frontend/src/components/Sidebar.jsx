@@ -5,12 +5,13 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import {useNavigate} from "react-router-dom";
 import {useSelector, useDispatch} from "react-redux";
-import { setAuthUser, setOtherUsers, setSelectedUser } from '../redux/userSlice';
+import { setAuthUser, setSelectedUser } from '../redux/userSlice';
 import { setMessages } from '../redux/messageSlice';
 import { BASE_URL } from '..';
  
 const Sidebar = () => {
     const [search, setSearch] = useState("");
+    const [filteredUsers, setFilteredUsers] = useState(null);
     const {otherUsers} = useSelector(store=>store.user);
     const dispatch = useDispatch();
 
@@ -31,10 +32,14 @@ const Sidebar = () => {
     }
     const searchSubmitHandler = (e) => {
         e.preventDefault();
-        const conversationUser = otherUsers?.find((user)=> user.fullName.toLowerCase().includes(search.toLowerCase()));
-        if(conversationUser){
-            dispatch(setOtherUsers([conversationUser]));
-        }else{
+        if (!search.trim()) {
+            setFilteredUsers(null);
+            return;
+        }
+        const matched = otherUsers?.filter((user) => user.fullName.toLowerCase().includes(search.toLowerCase()));
+        if (matched && matched.length > 0) {
+            setFilteredUsers(matched);
+        } else {
             toast.error("User not found!");
         }
     }
@@ -43,7 +48,7 @@ const Sidebar = () => {
             <form onSubmit={searchSubmitHandler} action="" className='flex items-center gap-2'>
                 <input
                     value={search}
-                    onChange={(e)=>setSearch(e.target.value)}
+                    onChange={(e) => { setSearch(e.target.value); if (!e.target.value) setFilteredUsers(null); }}
                     className='input input-bordered rounded-md' type="text"
                     placeholder='Search...'
                 />
@@ -52,7 +57,7 @@ const Sidebar = () => {
                 </button>
             </form>
             <div className="divider px-3"></div> 
-            <OtherUsers/> 
+            <OtherUsers filteredUsers={filteredUsers}/>
             <div className='mt-2'>
                 <button onClick={logoutHandler} className='btn btn-sm'>Logout</button>
             </div>
