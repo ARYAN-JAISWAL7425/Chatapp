@@ -12,7 +12,7 @@ import { BASE_URL } from '..';
 const Sidebar = () => {
     const [search, setSearch] = useState("");
     const [filteredUsers, setFilteredUsers] = useState(null);
-    const {otherUsers} = useSelector(store=>store.user);
+    const {otherUsers, selectedUser} = useSelector(store=>store.user);
     const dispatch = useDispatch();
 
     const navigate = useNavigate();
@@ -44,12 +44,12 @@ const Sidebar = () => {
         }
     }
     return (
-        <div className='border-r border-slate-500 p-4 flex flex-col'>
+        <div className={`${selectedUser ? 'hidden md:flex' : 'flex'} w-full md:w-auto border-r border-slate-500 p-4 flex-col`}>
             <form onSubmit={searchSubmitHandler} action="" className='flex items-center gap-2'>
                 <input
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); if (!e.target.value) setFilteredUsers(null); }}
-                    className='input input-bordered rounded-md' type="text"
+                    className='input input-bordered rounded-md w-full flex-1' type="text"
                     placeholder='Search...'
                 />
                 <button type='submit' className='btn bg-zinc-700 text-white'>
